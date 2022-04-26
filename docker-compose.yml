@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+  daemon:
+    image: nickadam/restic-docker:1
+    build: .
+    hostname: restic
+    environment:
+      AWS_ACCESS_KEY_ID: minio-access-key
+      AWS_SECRET_ACCESS_KEY: minio-secret-key
+      #AWS_SECRET_ACCESS_KEY_FILE:
+      RESTIC_PASSWORD: badpassword
+      # RESTIC_PASSWORD_FILE:
+      RESTIC_REPOSITORY: s3:http://minio:9000/resticbucket/appprefix
+      BACKUP_CRON: '* * * * *'
+      FORGET_CRON: '* * * * *'
+      FORGET_ARGS: --prune --keep-last 5
+      TARGZ: 1
+    volumes:
+      - type: volume
+        source: data
+        target: /data
+    depends_on:
+      - minio
+  minio:
+    image: bitnami/minio:latest
+    environment:
+      MINIO_ROOT_USER: minio-access-key
+      MINIO_ROOT_PASSWORD: minio-secret-key
+    ports:
+      - target: 9000
+        published: 9000
+        protocol: tcp
+      - target: 9001
+        published: 9001
+        protocol: tcp
+volumes:
+  data:
+# secrets:
+#   smbpassword:
+#     external: true
